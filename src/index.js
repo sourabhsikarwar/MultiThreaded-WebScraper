@@ -1,6 +1,6 @@
 import puppeteer from "puppeteer";
 import express from 'express'
-import { getQuotesInLoop } from "./src/controller/getQuotes.js";
+import { getQuotesInLoop } from "./controller/getQuotes.js";
 
 const PORT = 8080
 const app = express()
