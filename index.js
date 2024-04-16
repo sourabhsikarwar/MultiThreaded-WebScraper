@@ -1,6 +1,14 @@
 import puppeteer from "puppeteer";
+import express from 'express'
+import { getQuotesInLoop } from "./src/controller/getQuotes.js";
 
-const getQuotes = async () => {
+const PORT = 8080
+const app = express()
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const getQuotes = async (req, res) => {
   const browser = await puppeteer.launch({
     headless: false,
     defaultViewport: null,
@@ -22,11 +30,17 @@ const getQuotes = async () => {
     });
   });
 
-  console.log(quotes);
+  res.status(200).send({
+    quotes: quotes
+  })
 
   //   await page.click(".pager > .next > a")
 
   await browser.close();
 };
 
-getQuotes();
+app.get("/quotes", getQuotesInLoop)
+
+app.listen(PORT, () => {
+  console.log(`Application running on PORT ${PORT}`)
+})
