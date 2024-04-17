@@ -1,13 +1,20 @@
-export class Queue {
+export default class Queue {
+  queueSize = 4;
+  // Setting the queue to be 4
+  // so that maximum of 4 worker threads can be created parallely
+
   constructor() {
     this.items = [];
   }
   isEmpty() {
     return this.items.length === 0;
   }
+  isFull() {
+    return this.items.length === this.queueSize;
+  }
   enqueue(val) {
     this.items.push(val);
-    return `${val} inserted!`
+    return `${val} inserted!`;
   }
   dequeue() {
     if (this.isEmpty()) {
@@ -25,4 +32,3 @@ export class Queue {
     return this.items;
   }
 }
-
