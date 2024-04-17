@@ -22,7 +22,7 @@ export const quoteScrapper = async (url) => {
       });
     });
     
-    //   await page.click(".pager > .next > a")
+    // await page.click(".pager > .next > a") | ---> for navigating to next page
     
     await browser.close();
     return quotes

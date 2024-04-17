@@ -1,6 +1,6 @@
-import { quoteScrapper } from "../services/quoteScrapper.js";
+import { Queue } from "../services/queue";
 
-export const getQuotesInLoop = async (req, res) => {
+export const getQuotesFaster = async (req, res) => {
   const urlList = await req.body.list;
 
   if (!urlList || !urlList.length) {
@@ -8,18 +8,4 @@ export const getQuotesInLoop = async (req, res) => {
       message: "Requires a list URLs to process!",
     });
   }
-
-  const scrappedData = await Promise.all(
-    urlList.map(async (url) => {
-      const data = await quoteScrapper(url);
-      if (data) {
-        return data
-      } else {
-        return null
-      }
-    })
-  );
-  res.status(200).send({
-    data: scrappedData,
-  });
 };
