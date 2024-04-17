@@ -1,4 +1,3 @@
-import puppeteer from "puppeteer";
 import express from 'express'
 import { getQuotesInLoop } from "./controller/getQuotesInLoop.js/index.js";
 

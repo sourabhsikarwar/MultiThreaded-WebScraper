@@ -1,5 +1,3 @@
-import { Queue } from "../services/queue";
-
 export const getQuotesFaster = async (req, res) => {
   const urlList = await req.body.list;
 
