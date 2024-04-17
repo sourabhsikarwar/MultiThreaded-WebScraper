@@ -25,7 +25,7 @@ export class ParallelScrapper {
       console.log(`Error on ${id} worker`, error);
     });
   }
-  async sendMessage(workerId) [
-    // some code
-  ]
+  async sendMessage(workerId) {
+    console.log(workerId)
+  }
 }
