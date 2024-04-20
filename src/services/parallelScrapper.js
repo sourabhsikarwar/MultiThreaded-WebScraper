@@ -5,6 +5,7 @@ export default class ParallelScrapper {
   constructor(capacity, workerScript) {
     this.urlQueue = new Queue();
     this.workerMap = new Map();
+    this.workerPromises = new Map();
     this.workersPoolCapacity = capacity;
     this.workerScript = workerScript;
 
@@ -17,15 +18,12 @@ export default class ParallelScrapper {
     for (let i = 0; i < this.workersPoolCapacity; i++) {
       const worker = new Worker(this.workerScript);
 
-      worker.on("message", this.handleWorkerMessage.bind(this, worker));
-      worker.on("error", this.handleWorkerError.bind(this, worker));
-
       this.workerMap.set(worker, true);
     }
   }
 
   handleWorkerMessage(worker, message) {
-    console.log(`Message from worker ${worker.threadId}`, message);
+    console.log(`Message from worker ${worker.threadId}`);
     this.handleFinishWorkerTask(worker);
   }
 
@@ -38,19 +36,22 @@ export default class ParallelScrapper {
     this.workerMap.set(worker, true);
     console.log(`Worker with id ${worker.threadId} is free to work!`);
 
-    const url = this.urlQueue.dequeue();
+    const queueItem = this.urlQueue.dequeue();
 
-    if (url) {
-      this.assignTaskToWorker(worker, url);
+    if (queueItem) {
+      const { url, resolve, reject } = queueItem;
+      const taskId = Math.random().toString(36).substring(7);
+      this.assignTaskToWorker(worker, url, taskId);
+      this.workerPromises.set(taskId, { resolve, reject });
     } else {
       console.log(`Terminating Thread Worker ${worker.threadId}`);
       worker.terminate();
     }
   }
 
-  assignTaskToWorker(worker, url) {
+  assignTaskToWorker(worker, url, taskId) {
     this.workerMap.set(worker, false);
-    worker.postMessage({ url, id: worker.threadId });
+    worker.postMessage({ url, id: worker.threadId, taskId });
   }
 
   findAvailableWorker() {
@@ -64,21 +65,42 @@ export default class ParallelScrapper {
     return null;
   }
 
-  addTask(url) {
-    const availableWorker = this.findAvailableWorker();
+  resolveTask(message) {
+    const taskPromise = this.workerPromises.get(message.taskId);
 
-    if (availableWorker) {
-      this.assignTaskToWorker(availableWorker, url);
+    if (taskPromise) {
+      taskPromise.resolve(message);
+
+      console.log(`Promise Resolved!`);
+      this.workerPromises.delete(message.taskId);
     } else {
-      this.urlQueue.enqueue(url);
+      console.log(`Task Promises with id ${message.taskId} not found!`);
     }
   }
 
+  addTask(url) {
+    return new Promise((resolve, reject) => {
+      const availableWorker = this.findAvailableWorker();
 
+      if (availableWorker) {
+        const taskId = Math.random().toString(36).substring(7);
+        this.assignTaskToWorker(availableWorker, url, taskId);
 
-  getScrappedData() {}
+        this.workerPromises.set(taskId, { resolve, reject });
 
-  shutdownScrapper() {
+        availableWorker.on("message", (message) => {
+          this.handleWorkerMessage(availableWorker, message);
+          this.resolveTask(message);
+        });
 
+        availableWorker.on("error", (error) => {
+          this.handleWorkerError(availableWorker, error);
+        });
+      } else {
+        this.urlQueue.enqueue({ url, resolve, reject });
+      }
+    }).catch((error) => {
+      console.log("Error: ", error);
+    });
   }
 }

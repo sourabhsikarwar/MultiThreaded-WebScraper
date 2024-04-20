@@ -1,4 +1,4 @@
-import ParallelScrapper from "../services/parallelScrapper.js"
+import ParallelScrapper from "../services/parallelScrapper.js";
 
 export const getQuotesFaster = async (req, res) => {
   const urlList = await req.body.list;
@@ -10,18 +10,19 @@ export const getQuotesFaster = async (req, res) => {
   }
 
   try {
-    const scrapper = new ParallelScrapper(4, "./src/services/scrapWorker.js")
+    const scrapper = new ParallelScrapper(4, "./src/services/scrapWorker.js");
 
-    for(let url of urlList){
-      scrapper.addTask(url)
-    }
-    
-    const results = await scrapper.getScrappedData()
+    const taskList = urlList.map((url) => scrapper.addTask(url))
 
-    res.status(200).send({
-      message: "Chal Raha he!"
-    })
+    // const taskList = await urlList.map(async (url) => {
+    //   const data = await scrapper.addTask(url);
+    //   console.log(data, "data")
+    //   return data
+    // });
 
+    const results = await Promise.all(taskList)
+
+    res.status(200).send(results);
   } catch (error) {
     res.status(500).send({
       message: error.message,
