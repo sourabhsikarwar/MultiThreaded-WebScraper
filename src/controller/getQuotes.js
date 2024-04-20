@@ -14,12 +14,6 @@ export const getQuotesFaster = async (req, res) => {
 
     const taskList = urlList.map((url) => scrapper.addTask(url))
 
-    // const taskList = await urlList.map(async (url) => {
-    //   const data = await scrapper.addTask(url);
-    //   console.log(data, "data")
-    //   return data
-    // });
-
     const results = await Promise.all(taskList)
 
     res.status(200).send(results);
