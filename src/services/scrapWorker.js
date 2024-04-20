@@ -1,8 +1,14 @@
-import { workerData, parentPort } from "worker_threads";
+import { workerData, isMainThread, parentPort } from "worker_threads";
 import { quoteScrapper } from "../utils/quoteScrapper.js";
 
-const url = workerData.url;
+if (!isMainThread) {
+  parentPort.on("message", async (task) => {
+    console.log(task.url, `Assigned the url to Worker ${task.id}!`);
+    const results = await quoteScrapper(task.url);
 
-const results = quoteScrapper(url);
-
-parentPort.postMessage(results);
+    parentPort.postMessage({
+      url: task.url,
+      data: results,
+    });
+  });
+}

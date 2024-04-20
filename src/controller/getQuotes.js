@@ -1,9 +1,7 @@
-import Queue from "../services/queue.js";
+import ParallelScrapper from "../services/parallelScrapper.js"
 
 export const getQuotesFaster = async (req, res) => {
   const urlList = await req.body.list;
-
-  const results = [];
 
   if (!urlList || !urlList.length) {
     res.status(400).send({
@@ -12,30 +10,21 @@ export const getQuotesFaster = async (req, res) => {
   }
 
   try {
-    const queue = new Queue();
-    let index = 0;
-    let timeout = 0;
-    let urlLength = urlList.length;
+    const scrapper = new ParallelScrapper(4, "./src/services/scrapWorker.js")
 
-    while (index < urlLength && timeout < 20) {
-      if (!queue.isFull()) {
-        
-      }
-      timeout++;
+    for(let url of urlList){
+      scrapper.addTask(url)
     }
+    
+    const results = await scrapper.getScrappedData()
 
-    if (timeout >= 20) {
-      throw new Error("API Timeout!");
-    }
+    res.status(200).send({
+      message: "Chal Raha he!"
+    })
 
-    if (results.length > 0) {
-      res.status(200).send(results);
-    } else {
-      throw new Error("Something Went Wrong!");
-    }
-  } catch (err) {
+  } catch (error) {
     res.status(500).send({
-      message: err.message,
+      message: error.message,
     });
   }
 };
