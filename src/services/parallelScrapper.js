@@ -8,6 +8,7 @@ export default class ParallelScrapper {
     this.workerPromises = new Map();
     this.workersPoolCapacity = capacity;
     this.workerScript = workerScript;
+    this.availableWorkers = []
 
     this.initializeWorkers();
 
@@ -20,6 +21,7 @@ export default class ParallelScrapper {
 
       this.workerMap.set(worker, true);
     }
+    this.availableWorkers = Array.from(this.workerMap.keys());
   }
 
   handleWorkerMessage(worker, message) {
@@ -34,6 +36,7 @@ export default class ParallelScrapper {
 
   handleFinishWorkerTask(worker) {
     this.workerMap.set(worker, true);
+    this.availableWorkers.push(worker);
     console.log(`Worker with id ${worker.threadId} is free to work!`);
 
     const queueItem = this.urlQueue.dequeue();
@@ -55,14 +58,7 @@ export default class ParallelScrapper {
   }
 
   findAvailableWorker() {
-    // TODO: Optimizing it to O(1)
-    const entriesArray = Array.from(this.workerMap);
-    const availableWorker = entriesArray.find(([key, value]) => value === true);
-
-    if (availableWorker) {
-      return availableWorker[0] ? availableWorker[0] : null;
-    }
-    return null;
+    return this.availableWorkers.pop() || null;
   }
 
   resolveTask(message) {
@@ -98,9 +94,8 @@ export default class ParallelScrapper {
         });
       } else {
         this.urlQueue.enqueue({ url, resolve, reject });
+        return
       }
-    }).catch((error) => {
-      console.log("Error: ", error);
-    });
+    })
   }
 }
