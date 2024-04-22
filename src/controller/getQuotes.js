@@ -3,7 +3,8 @@ import os from "os";
 
 export const getQuotesFaster = async (req, res) => {
   const urlList = await req.body.list;
-  const numCores = os.cpus().length;
+  const urlListLength = urlList.length;
+  const numCores = 4 // Fixing it for now but can be dynamic based on the system
 
   if (!urlList || !urlList.length) {
     res.status(400).send({
@@ -14,9 +15,21 @@ export const getQuotesFaster = async (req, res) => {
   try {
     const scrapper = new ParallelScrapper(numCores, "./src/services/scrapWorker.js");
 
-    const taskList = urlList.map((url) => scrapper.addTask(url))
+    // batching urls list with number of cores available accordting to the system
+    const batchingUrls = () => {
+      const batchedUrls = [];
+      const batchSize = Math.ceil(urlListLength / numCores);
+      for (let i = 0; i < numCores; i++) {
+        const start = i * batchSize;
+        const end = start + batchSize;
+        batchedUrls.push(urlList.slice(start, end));
+      }
+      return batchedUrls;
+    }
 
-    const results = await Promise.all(taskList)
+    const batchedTask = batchingUrls.map((batch) => scrapper.scrap(batch))
+
+    const results = await Promise.all(batchedTask)
 
     res.status(200).send(results);
   } catch (error) {
