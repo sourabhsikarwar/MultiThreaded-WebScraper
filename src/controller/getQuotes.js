@@ -1,7 +1,9 @@
 import ParallelScrapper from "../services/parallelScrapper.js";
+import os from "os";
 
 export const getQuotesFaster = async (req, res) => {
   const urlList = await req.body.list;
+  const numCores = os.cpus().length;
 
   if (!urlList || !urlList.length) {
     res.status(400).send({
@@ -10,7 +12,7 @@ export const getQuotesFaster = async (req, res) => {
   }
 
   try {
-    const scrapper = new ParallelScrapper(4, "./src/services/scrapWorker.js");
+    const scrapper = new ParallelScrapper(numCores, "./src/services/scrapWorker.js");
 
     const taskList = urlList.map((url) => scrapper.addTask(url))
 
