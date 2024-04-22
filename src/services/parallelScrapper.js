@@ -74,7 +74,7 @@ export default class ParallelScrapper {
     }
   }
 
-  addTask(url) {
+  addTask(batchUrls) {
     return new Promise((resolve, reject) => {
       const availableWorker = this.findAvailableWorker();
 
