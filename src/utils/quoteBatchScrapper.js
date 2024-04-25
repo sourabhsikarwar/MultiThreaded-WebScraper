@@ -1,4 +1,5 @@
 import puppeteer from "puppeteer";
+import { getRedisClient } from "../config/index.js";
 
 export const quoteBatchScrapper = async (urls) => {
   const browser = await puppeteer.launch({
@@ -6,10 +7,21 @@ export const quoteBatchScrapper = async (urls) => {
     defaultViewport: null,
   });
 
+  const redisClient = getRedisClient();
+
   const page = await browser.newPage();
   const results = [];
 
   for (const url of urls) {
+    // getting the cached data from redis 
+    const cachedData = await redisClient.get(url);
+
+    if (cachedData) {
+      results.push({ url, quotes: JSON.parse(cachedData) });
+      console.log("Data fetched from cache for: ", url)
+      continue;
+    }
+
     await page.goto(url, {
       waitUntil: "domcontentloaded",
     });
@@ -24,6 +36,8 @@ export const quoteBatchScrapper = async (urls) => {
       });
     });
 
+    // setting the redis cache with url as a key and the quotes as a value with TTL
+    await redisClient.set(url, JSON.stringify(quotes), "EX", 120);
     results.push({ url, quotes });
   }
 
